@@ -1,8 +1,8 @@
 # Objets Hub
 
 Manage a collection of **Objects** (`title`, `description`, `imageUrl`, `createdAt`).
-Creating or deleting an object on one client is reflected in realtime on every other
-client via Socket.IO.
+Creating, editing or deleting an object on one client is reflected in realtime on
+every other client via Socket.IO.
 
 Scope delivered here: **REST API (NestJS) + Web app (Next.js + shadcn/ui)**.
 The mobile app is intentionally left out.
@@ -14,7 +14,7 @@ The mobile app is intentionally left out.
 | API       | NestJS 10, **hexagonal architecture** (ports & adapters) |
 | Database  | MongoDB (Mongoose)                               |
 | Storage   | Any S3-compatible service — **MinIO** here (non-AWS) |
-| Realtime  | Socket.IO (`object:created`, `object:deleted`)  |
+| Realtime  | Socket.IO (`object:created`, `object:updated`, `object:deleted`) |
 | API docs  | OpenAPI / Swagger UI at `/docs`                  |
 | Web       | Next.js 14 App Router, Tailwind, shadcn/ui       |
 
@@ -85,13 +85,17 @@ pnpm start:dev            # http://localhost:4000
 | POST   | `/objects`     | multipart: `title`, `description`, `image` (file) | 201 + object |
 | GET    | `/objects`     | `?limit` (1–200, default 100), `?skip` (≥0)   | object[] (newest first) |
 | GET    | `/objects/:id` | —                                             | object |
+| PATCH  | `/objects/:id` | multipart: any of `title`, `description`, `image` (file) | 200 + object; replacing the image deletes the old S3 file |
 | DELETE | `/objects/:id` | —                                             | 204, also deletes the S3 file |
 | GET    | `/health`      | —                                             | `{ status, checks: { mongo, storage } }` — 200 or 503 |
 
 `POST` uploads the image to S3 first; if the DB write then fails the upload is
-rolled back so no orphan files are left. `DELETE` removes the DB row and the S3
-object (S3 failure is logged, not fatal). All routes are rate-limited to
-60 req/min/IP (`/health` is exempt).
+rolled back so no orphan files are left. `PATCH` applies the same rule when an
+image is supplied — the new file is uploaded first, and only after the DB update
+commits is the previous image deleted (best-effort); a failed update rolls the
+new upload back. `DELETE` removes the DB row and the S3 object (S3 failure is
+logged, not fatal). All routes are rate-limited to 60 req/min/IP (`/health` is
+exempt).
 
 ## 3. Web
 
@@ -101,8 +105,10 @@ pnpm install
 pnpm dev                  # http://localhost:3000
 ```
 
-Open two browser tabs (or a tab + the API) and create/delete an object — the list
-updates live in both.
+Open two browser tabs (or a tab + the API) and create, edit or delete an object —
+every list and open detail view updates live in all of them. Editing is available
+both from each card and from the single-object page (title, description, and an
+optional image replacement).
 
 ## Architecture (API)
 
@@ -119,6 +125,7 @@ api/src/objects/
 │   ├── create-object.use-case.ts
 │   ├── list-objects.use-case.ts
 │   ├── get-object.use-case.ts
+│   ├── update-object.use-case.ts
 │   └── delete-object.use-case.ts
 ├── infrastructure/         # adapters implementing the ports
 │   ├── persistence/  mongoose-object.repository.ts
