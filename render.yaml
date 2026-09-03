@@ -28,11 +28,11 @@ services:
     envVars:
       - key: NODE_VERSION
         value: "22"
+      # Full origin of the web service. `fromService … property: host` injects a
+      # bare service name on the first parallel deploy, which breaks CORS —
+      # hardcode it. Adjust if Render appended a suffix to the web URL.
       - key: CORS_ORIGIN
-        fromService:
-          type: web
-          name: objets-hub-web
-          property: host
+        value: https://objets-hub-web.onrender.com
       - key: OBJECTS_QUEUE_ENABLED
         value: "true"
       - key: OBJECTS_QUEUE_CONCURRENCY
@@ -78,12 +78,11 @@ services:
     envVars:
       - key: NODE_VERSION
         value: "22"
-      # Baked into the client bundle at build time.
+      # Baked into the client bundle at build time — must be the full API URL.
+      # `fromService … property: host` injects a bare service name on the first
+      # parallel deploy, so hardcode it. Adjust if Render appended a suffix.
       - key: NEXT_PUBLIC_API_URL
-        fromService:
-          type: web
-          name: objets-hub-api
-          property: host
+        value: https://objets-hub-api.onrender.com
 
   - type: keyvalue
     name: objets-hub-redis
