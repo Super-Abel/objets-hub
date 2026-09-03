@@ -9,6 +9,9 @@ import {
 } from '../../domain/ports/object-repository.port';
 import { ObjectDocument, ObjectModel } from './object.model';
 
+/** Rows the API is allowed to see — soft-deleted ones are excluded everywhere. */
+const ACTIVE_ONLY = { deletedAt: null } as const;
+
 /** Adapter binding the ObjectRepository port to MongoDB via Mongoose. */
 @Injectable()
 export class MongooseObjectRepository implements ObjectRepository {
@@ -29,7 +32,7 @@ export class MongooseObjectRepository implements ObjectRepository {
 
   async findAll({ limit, skip }: ListPage): Promise<CollectionObject[]> {
     const docs = await this.model
-      .find()
+      .find(ACTIVE_ONLY)
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
@@ -39,14 +42,14 @@ export class MongooseObjectRepository implements ObjectRepository {
 
   async findById(id: string): Promise<CollectionObject | null> {
     if (!isValidObjectId(id)) return null;
-    const doc = await this.model.findById(id).exec();
+    const doc = await this.model.findOne({ _id: id, ...ACTIVE_ONLY }).exec();
     return doc ? this.toDomain(doc) : null;
   }
 
   async update(object: CollectionObject): Promise<CollectionObject> {
     const doc = await this.model
-      .findByIdAndUpdate(
-        object.id,
+      .findOneAndUpdate(
+        { _id: object.id, ...ACTIVE_ONLY },
         {
           title: object.title,
           description: object.description,
@@ -60,8 +63,17 @@ export class MongooseObjectRepository implements ObjectRepository {
     return this.toDomain(doc);
   }
 
+  /**
+   * Soft delete: stamp `deletedAt` instead of removing the document. The row
+   * stays in Mongo (restorable, auditable) but every read above filters it out.
+   */
   async delete(object: CollectionObject): Promise<void> {
-    await this.model.deleteOne({ _id: object.id }).exec();
+    await this.model
+      .updateOne(
+        { _id: object.id, ...ACTIVE_ONLY },
+        { $set: { deletedAt: new Date() } },
+      )
+      .exec();
   }
 
   private toDomain(doc: ObjectDocument): CollectionObject {

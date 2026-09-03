@@ -13,7 +13,11 @@ interface Row {
   imageUrl: string;
   imageKey: string;
   createdAt: Date;
+  /** Soft-delete marker — mirrors the Mongoose adapter. */
+  deletedAt: Date | null;
 }
+
+const isActive = (row: Row): boolean => row.deletedAt === null;
 
 /**
  * In-memory {@link ObjectRepository} used by unit and integration tests. Keeps
@@ -43,15 +47,16 @@ export class InMemoryObjectRepository implements ObjectRepository {
       imageUrl: object.imageUrl,
       imageKey: object.imageKey,
       createdAt: new Date(),
+      deletedAt: null,
     };
     this.rows.push(row);
     return CollectionObject.rehydrate({ ...row });
   }
 
   async findAll(page?: ListPage): Promise<CollectionObject[]> {
-    const sorted = [...this.rows].sort(
-      (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
-    );
+    const sorted = this.rows
+      .filter(isActive)
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
     const skip = page?.skip ?? 0;
     const end = page ? skip + page.limit : undefined;
     return sorted
@@ -60,7 +65,7 @@ export class InMemoryObjectRepository implements ObjectRepository {
   }
 
   async findById(id: string): Promise<CollectionObject | null> {
-    const row = this.rows.find((r) => r.id === id);
+    const row = this.rows.find((r) => r.id === id && isActive(r));
     return row ? CollectionObject.rehydrate({ ...row }) : null;
   }
 
@@ -71,7 +76,7 @@ export class InMemoryObjectRepository implements ObjectRepository {
       throw error;
     }
 
-    const row = this.rows.find((r) => r.id === object.id);
+    const row = this.rows.find((r) => r.id === object.id && isActive(r));
     if (!row) throw new ObjectNotFoundError(object.id);
     row.title = object.title;
     row.description = object.description;
@@ -80,13 +85,19 @@ export class InMemoryObjectRepository implements ObjectRepository {
     return CollectionObject.rehydrate({ ...row });
   }
 
+  /** Soft delete — stamps `deletedAt`, keeps the row (mirrors the Mongoose adapter). */
   async delete(object: CollectionObject): Promise<void> {
-    const index = this.rows.findIndex((r) => r.id === object.id);
-    if (index >= 0) this.rows.splice(index, 1);
+    const row = this.rows.find((r) => r.id === object.id && isActive(r));
+    if (row) row.deletedAt = new Date();
   }
 
-  /** Test helper: current row count. */
+  /** Test helper: count of live (non-soft-deleted) rows. */
   get size(): number {
-    return this.rows.length;
+    return this.rows.filter(isActive).length;
+  }
+
+  /** Test helper: count of soft-deleted rows still held in storage. */
+  get archivedSize(): number {
+    return this.rows.filter((r) => !isActive(r)).length;
   }
 }

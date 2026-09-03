@@ -21,10 +21,18 @@ export class ObjectModel {
   @Prop({ required: true })
   imageKey!: string;
 
+  /**
+   * Soft-delete marker. `null` while the object is live; set to the deletion
+   * time by `DELETE /objects/:id`. Every read filters on `deletedAt: null`, so
+   * the row survives in Mongo but is invisible to the API.
+   */
+  @Prop({ type: Date, default: null })
+  deletedAt!: Date | null;
+
   createdAt!: Date;
 }
 
 export const ObjectSchema = SchemaFactory.createForClass(ObjectModel);
 
-// GET /objects always sorts by newest first — back it with an index.
-ObjectSchema.index({ createdAt: -1 });
+// GET /objects lists live objects newest-first — back that exact query.
+ObjectSchema.index({ deletedAt: 1, createdAt: -1 });

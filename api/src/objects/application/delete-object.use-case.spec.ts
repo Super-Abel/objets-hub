@@ -47,10 +47,22 @@ describe('DeleteObjectUseCase', () => {
 
     await deleteObject.execute(id);
 
+    // Soft delete: the row is hidden from reads but retained in storage.
     expect(repository.size).toBe(0);
+    expect(repository.archivedSize).toBe(1);
+    expect(await repository.findById(id)).toBeNull();
     expect(storage.deleted).toContain(key);
     expect(events.deleted).toEqual([id]);
     expect(queue.imageDeletions).toHaveLength(0);
+  });
+
+  it('is idempotent — deleting an already soft-deleted object 404s', async () => {
+    const id = await seedOne();
+    await deleteObject.execute(id);
+
+    await expect(deleteObject.execute(id)).rejects.toThrow(ObjectNotFoundError);
+    expect(repository.archivedSize).toBe(1);
+    expect(events.deleted).toEqual([id]); // not emitted a second time
   });
 
   it('defers the S3 deletion to the queue when it is enabled', async () => {
@@ -61,6 +73,7 @@ describe('DeleteObjectUseCase', () => {
     await deleteObject.execute(id);
 
     expect(repository.size).toBe(0);
+    expect(repository.archivedSize).toBe(1);
     expect(events.deleted).toEqual([id]);
     expect(storage.deleted).toHaveLength(0);
     expect(queue.imageDeletions).toEqual([{ objectId: id, imageKey: key }]);

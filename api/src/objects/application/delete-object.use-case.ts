@@ -34,9 +34,11 @@ export class DeleteObjectUseCase {
     await this.repository.delete(object);
     this.events.objectDeleted(object.id);
 
-    // The DB row is gone — that is the deletion. Removing the S3 image is a
-    // retryable side effect: off to the queue when one is configured, inline
-    // otherwise (best-effort, never fatal — see the storage port contract).
+    // `repository.delete` is a soft delete: the Mongo row is kept (stamped
+    // `deletedAt`) and just hidden from every read. The S3 image, however, is
+    // still purged here — a retryable side effect: off to the queue when one is
+    // configured, inline otherwise (best-effort, never fatal — see the storage
+    // port contract).
     if (this.queue.isEnabled()) {
       await this.queue.enqueueImageDeletion({
         objectId: object.id,
