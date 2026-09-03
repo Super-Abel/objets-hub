@@ -1,0 +1,3 @@
+# pnpm 11 reads project settings from here. The committed lockfile is authoritative,
+# so skip the implicit install pnpm otherwise runs before every `pnpm run`/`exec`.
+verifyDepsBeforeRun: false

@@ -1,0 +1,13 @@
+# pnpm 11 reads project settings from here (not the package.json "pnpm" field).
+# Skip the implicit install that pnpm otherwise runs before every `pnpm run`/`exec`:
+# the committed lockfile is authoritative.
+verifyDepsBeforeRun: false
+# Allow these postinstall scripts so `pnpm install` exits cleanly. Both are
+# harmless (NestJS funding notice, Scarf analytics ping).
+onlyBuiltDependencies:
+  - '@nestjs/core'
+  - '@scarf/scarf'
+allowBuilds:
+  '@nestjs/core': set this to true or false
+  '@scarf/scarf': set this to true or false
+  msgpackr-extract: set this to true or false

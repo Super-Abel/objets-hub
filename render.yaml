@@ -1,0 +1,88 @@
+# Render Blueprint — https://render.com/docs/blueprint-spec
+# Deploy: Render Dashboard → New → Blueprint → connect github.com/Super-Abel/objets-hub
+#
+# Provisions 3 resources on the free plan:
+#   objets-hub-api    NestJS REST + Socket.IO
+#   objets-hub-web    Next.js (SSR)
+#   objets-hub-redis  Key Value store for the BullMQ queue
+#
+# NOT provisioned (Render has no managed MongoDB / S3) — set these yourself as
+# secrets on objets-hub-api after the first deploy:
+#   MONGODB_URI    MongoDB Atlas free cluster (M0)
+#   S3_*           any non-AWS S3 bucket (Cloudflare R2, Backblaze B2, Scaleway…)
+
+services:
+  - type: web
+    name: objets-hub-api
+    runtime: node
+    plan: free
+    region: frankfurt
+    rootDir: api
+    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm build
+    startCommand: pnpm start:prod
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+      - key: CORS_ORIGIN
+        fromService:
+          type: web
+          name: objets-hub-web
+          property: host
+      - key: OBJECTS_QUEUE_ENABLED
+        value: "true"
+      - key: OBJECTS_QUEUE_CONCURRENCY
+        value: "3"
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: objets-hub-redis
+          property: connectionString
+      # --- secrets: fill in the Render dashboard (sync:false keeps them out of git) ---
+      - key: MONGODB_URI
+        sync: false
+      - key: S3_ENDPOINT
+        sync: false
+      - key: S3_REGION
+        sync: false
+      - key: S3_BUCKET
+        sync: false
+      - key: S3_ACCESS_KEY
+        sync: false
+      - key: S3_SECRET_KEY
+        sync: false
+      - key: S3_PUBLIC_URL
+        sync: false
+      - key: S3_FORCE_PATH_STYLE
+        value: "false"
+      - key: S3_MAX_IMAGE_BYTES
+        value: "5242880"
+      - key: S3_KEY_PREFIX
+        value: objects
+
+  - type: web
+    name: objets-hub-web
+    runtime: node
+    plan: free
+    region: frankfurt
+    rootDir: web
+    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm build
+    startCommand: pnpm start
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+      # Baked into the client bundle at build time.
+      - key: NEXT_PUBLIC_API_URL
+        fromService:
+          type: web
+          name: objets-hub-api
+          property: host
+
+  - type: keyvalue
+    name: objets-hub-redis
+    plan: free
+    region: frankfurt
+    ipAllowList: [] # internal connections only
+    maxmemoryPolicy: noeviction # required by BullMQ
