@@ -8,8 +8,11 @@
 #
 # NOT provisioned (Render has no managed MongoDB / S3) — set these yourself as
 # secrets on objets-hub-api after the first deploy:
-#   MONGODB_URI    MongoDB Atlas free cluster (M0)
-#   S3_*           any non-AWS S3 bucket (Cloudflare R2, Backblaze B2, Scaleway…)
+#   MONGODB_URI      MongoDB Atlas free cluster (M0)
+#   S3_ACCESS_KEY /  Supabase Storage → Project Settings → Storage → S3 access keys
+#   S3_SECRET_KEY
+# The rest of the S3_* config (Supabase project whugtketkcxntmwbazmy, eu-west-1)
+# is non-secret and baked in below.
 
 services:
   - type: web
@@ -42,24 +45,26 @@ services:
       # --- secrets: fill in the Render dashboard (sync:false keeps them out of git) ---
       - key: MONGODB_URI
         sync: false
-      - key: S3_ENDPOINT
-        sync: false
-      - key: S3_REGION
-        sync: false
-      - key: S3_BUCKET
-        sync: false
       - key: S3_ACCESS_KEY
         sync: false
       - key: S3_SECRET_KEY
         sync: false
+      # --- Supabase Storage (S3-compatible, non-AWS) — non-secret ---
+      - key: S3_ENDPOINT
+        value: https://whugtketkcxntmwbazmy.storage.supabase.co/storage/v1/s3
+      - key: S3_REGION
+        value: eu-west-1
+      - key: S3_BUCKET
+        value: objects
       - key: S3_PUBLIC_URL
-        sync: false
+        value: https://whugtketkcxntmwbazmy.supabase.co/storage/v1/object/public
       - key: S3_FORCE_PATH_STYLE
-        value: "false"
+        value: "true"
       - key: S3_MAX_IMAGE_BYTES
         value: "5242880"
+      # empty: keys live at the bucket root → imageUrl = <public>/objects/<file>
       - key: S3_KEY_PREFIX
-        value: objects
+        value: ""
 
   - type: web
     name: objets-hub-web
