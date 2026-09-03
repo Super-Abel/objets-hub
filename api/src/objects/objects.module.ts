@@ -13,6 +13,7 @@ import { CreateObjectUseCase } from './application/create-object.use-case';
 import { DeleteObjectUseCase } from './application/delete-object.use-case';
 import { GetObjectUseCase } from './application/get-object.use-case';
 import { ListObjectsUseCase } from './application/list-objects.use-case';
+import { UpdateObjectUseCase } from './application/update-object.use-case';
 
 import {
   ALLOWED_IMAGE_MIME_TYPES,
@@ -80,6 +81,7 @@ import { ObjectsController } from './interface/http/objects.controller';
     CreateObjectUseCase,
     ListObjectsUseCase,
     GetObjectUseCase,
+    UpdateObjectUseCase,
     DeleteObjectUseCase,
 
     ObjectsGateway,

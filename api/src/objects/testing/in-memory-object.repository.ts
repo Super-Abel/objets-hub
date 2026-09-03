@@ -1,5 +1,6 @@
 import { randomUUID } from 'crypto';
 import { CollectionObject } from '../domain/collection-object';
+import { ObjectNotFoundError } from '../domain/errors';
 import {
   ListPage,
   ObjectRepository,
@@ -24,6 +25,9 @@ export class InMemoryObjectRepository implements ObjectRepository {
 
   /** Fails the next `save` call with the given error, then resets. */
   failNextSaveWith: Error | null = null;
+
+  /** Fails the next `update` call with the given error, then resets. */
+  failNextUpdateWith: Error | null = null;
 
   async save(object: CollectionObject): Promise<CollectionObject> {
     if (this.failNextSaveWith) {
@@ -58,6 +62,22 @@ export class InMemoryObjectRepository implements ObjectRepository {
   async findById(id: string): Promise<CollectionObject | null> {
     const row = this.rows.find((r) => r.id === id);
     return row ? CollectionObject.rehydrate({ ...row }) : null;
+  }
+
+  async update(object: CollectionObject): Promise<CollectionObject> {
+    if (this.failNextUpdateWith) {
+      const error = this.failNextUpdateWith;
+      this.failNextUpdateWith = null;
+      throw error;
+    }
+
+    const row = this.rows.find((r) => r.id === object.id);
+    if (!row) throw new ObjectNotFoundError(object.id);
+    row.title = object.title;
+    row.description = object.description;
+    row.imageUrl = object.imageUrl;
+    row.imageKey = object.imageKey;
+    return CollectionObject.rehydrate({ ...row });
   }
 
   async delete(object: CollectionObject): Promise<void> {

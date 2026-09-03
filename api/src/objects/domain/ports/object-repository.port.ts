@@ -13,5 +13,7 @@ export interface ObjectRepository {
   save(object: CollectionObject): Promise<CollectionObject>;
   findAll(page: ListPage): Promise<CollectionObject[]>;
   findById(id: string): Promise<CollectionObject | null>;
+  /** Persist changes to an already-stored object; returns the fresh state. */
+  update(object: CollectionObject): Promise<CollectionObject>;
   delete(object: CollectionObject): Promise<void>;
 }

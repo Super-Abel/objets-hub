@@ -7,6 +7,7 @@ import type { CollectionObject } from './types';
 /** Events the API gateway pushes (see api `ObjectsGateway`). */
 export interface ServerToClientEvents {
   'object:created': (object: CollectionObject) => void;
+  'object:updated': (object: CollectionObject) => void;
   'object:deleted': (payload: { id: string }) => void;
 }
 

@@ -16,8 +16,35 @@ export interface NewCollectionObject {
   imageKey: string;
 }
 
+/** Partial change applied to a persisted object — every field is optional. */
+export interface CollectionObjectChanges {
+  title?: string;
+  description?: string;
+  imageUrl?: string;
+  imageKey?: string;
+}
+
 const MAX_TITLE = 200;
 const MAX_DESCRIPTION = 2000;
+
+/** The invariants of a valid object — shared by `create` and `withChanges`. */
+function assertInvariants(fields: {
+  title: string;
+  description: string;
+  imageUrl: string;
+  imageKey: string;
+}): void {
+  if (!fields.title) throw new DomainError('title is required');
+  if (fields.title.length > MAX_TITLE)
+    throw new DomainError(`title must be at most ${MAX_TITLE} characters`);
+  if (!fields.description) throw new DomainError('description is required');
+  if (fields.description.length > MAX_DESCRIPTION)
+    throw new DomainError(
+      `description must be at most ${MAX_DESCRIPTION} characters`,
+    );
+  if (!fields.imageUrl || !fields.imageKey)
+    throw new DomainError('a stored image is required');
+}
 
 /**
  * Aggregate root of the "Objects" collection. Framework-free: it knows nothing
@@ -31,16 +58,12 @@ export class CollectionObject {
     const title = input.title?.trim() ?? '';
     const description = input.description?.trim() ?? '';
 
-    if (!title) throw new DomainError('title is required');
-    if (title.length > MAX_TITLE)
-      throw new DomainError(`title must be at most ${MAX_TITLE} characters`);
-    if (!description) throw new DomainError('description is required');
-    if (description.length > MAX_DESCRIPTION)
-      throw new DomainError(
-        `description must be at most ${MAX_DESCRIPTION} characters`,
-      );
-    if (!input.imageUrl || !input.imageKey)
-      throw new DomainError('a stored image is required');
+    assertInvariants({
+      title,
+      description,
+      imageUrl: input.imageUrl,
+      imageKey: input.imageKey,
+    });
 
     return new CollectionObject({
       id: null,
@@ -55,6 +78,32 @@ export class CollectionObject {
   /** Rebuild an object from a persisted representation (trusted, no validation). */
   static rehydrate(props: CollectionObjectProps): CollectionObject {
     return new CollectionObject(props);
+  }
+
+  /**
+   * Apply a partial change to a persisted object, re-checking every invariant.
+   * Returns a new instance; the original is left untouched. `title` and
+   * `description` are trimmed. Passing no field is a valid no-op.
+   */
+  withChanges(changes: CollectionObjectChanges): CollectionObject {
+    const next: CollectionObjectProps = {
+      ...this.props,
+      ...(changes.title !== undefined ? { title: changes.title.trim() } : {}),
+      ...(changes.description !== undefined
+        ? { description: changes.description.trim() }
+        : {}),
+      ...(changes.imageUrl !== undefined ? { imageUrl: changes.imageUrl } : {}),
+      ...(changes.imageKey !== undefined ? { imageKey: changes.imageKey } : {}),
+    };
+
+    assertInvariants({
+      title: next.title,
+      description: next.description,
+      imageUrl: next.imageUrl,
+      imageKey: next.imageKey,
+    });
+
+    return new CollectionObject(next);
   }
 
   get id(): string {

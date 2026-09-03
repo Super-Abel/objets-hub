@@ -4,10 +4,15 @@ import { ObjectEventPublisher } from '../domain/ports/object-event-publisher.por
 /** Captures the realtime events a use case emits, for assertions in tests. */
 export class RecordingEventPublisher implements ObjectEventPublisher {
   readonly created: CollectionObject[] = [];
+  readonly updated: CollectionObject[] = [];
   readonly deleted: string[] = [];
 
   objectCreated(object: CollectionObject): void {
     this.created.push(object);
+  }
+
+  objectUpdated(object: CollectionObject): void {
+    this.updated.push(object);
   }
 
   objectDeleted(id: string): void {

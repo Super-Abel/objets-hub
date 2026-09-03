@@ -7,6 +7,7 @@ import { CreateObjectUseCase } from '../../src/objects/application/create-object
 import { DeleteObjectUseCase } from '../../src/objects/application/delete-object.use-case';
 import { GetObjectUseCase } from '../../src/objects/application/get-object.use-case';
 import { ListObjectsUseCase } from '../../src/objects/application/list-objects.use-case';
+import { UpdateObjectUseCase } from '../../src/objects/application/update-object.use-case';
 import { storageConfig } from '../../src/config/storage.config';
 import { IMAGE_STORAGE } from '../../src/objects/domain/ports/image-storage.port';
 import { OBJECT_EVENT_PUBLISHER } from '../../src/objects/domain/ports/object-event-publisher.port';
@@ -41,6 +42,7 @@ describe('Objects HTTP (integration)', () => {
         CreateObjectUseCase,
         ListObjectsUseCase,
         GetObjectUseCase,
+        UpdateObjectUseCase,
         DeleteObjectUseCase,
         { provide: OBJECT_REPOSITORY, useValue: repository },
         { provide: IMAGE_STORAGE, useValue: storage },
@@ -90,9 +92,25 @@ describe('Objects HTTP (integration)', () => {
     const one = await request(app.getHttpServer()).get(`/objects/${id}`).expect(200);
     expect(one.body.id).toBe(id);
 
+    const patched = await request(app.getHttpServer())
+      .patch(`/objects/${id}`)
+      .field('title', 'Restored camera')
+      .expect(200);
+    expect(patched.body).toMatchObject({ id, title: 'Restored camera' });
+    expect(patched.body.description).toBe('A 1970s rangefinder.'); // untouched
+    expect(events.updated).toHaveLength(1);
+
+    const patchedImage = await request(app.getHttpServer())
+      .patch(`/objects/${id}`)
+      .attach('image', PNG_1x1, { filename: 'new.png', contentType: 'image/png' })
+      .expect(200);
+    expect(patchedImage.body.imageUrl).toEqual(expect.stringContaining('http'));
+    expect(storage.uploads).toHaveLength(2);
+    expect(storage.deleted).toHaveLength(1); // the replaced image
+
     await request(app.getHttpServer()).delete(`/objects/${id}`).expect(204);
     expect(events.deleted).toEqual([id]);
-    expect(storage.deleted).toHaveLength(1);
+    expect(storage.deleted).toHaveLength(2); // replaced image + the final one
 
     await request(app.getHttpServer()).get('/objects').expect(200).expect([]);
   });

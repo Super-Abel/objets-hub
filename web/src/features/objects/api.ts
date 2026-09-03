@@ -38,6 +38,24 @@ export async function createObject(input: {
   return parse(await fetch(BASE, { method: 'POST', body: form }));
 }
 
+/**
+ * PATCH /objects/:id — multipart. Sends only the fields provided; an `image`
+ * (when set) replaces the stored one. The updated card is reconciled via the
+ * `object:updated` socket event.
+ */
+export async function updateObject(
+  id: string,
+  input: { title?: string; description?: string; image?: File | null },
+): Promise<CollectionObject> {
+  const form = new FormData();
+  if (input.title !== undefined) form.append('title', input.title);
+  if (input.description !== undefined) form.append('description', input.description);
+  if (input.image) form.append('image', input.image);
+  return parse(
+    await fetch(`${BASE}/${id}`, { method: 'PATCH', body: form }),
+  );
+}
+
 /** DELETE /objects/:id */
 export async function deleteObject(id: string): Promise<void> {
   const res = await fetch(`${BASE}/${id}`, { method: 'DELETE' });

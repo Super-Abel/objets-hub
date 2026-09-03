@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { isValidObjectId, Model } from 'mongoose';
 import { CollectionObject } from '../../domain/collection-object';
+import { ObjectNotFoundError } from '../../domain/errors';
 import {
   ListPage,
   ObjectRepository,
@@ -40,6 +41,23 @@ export class MongooseObjectRepository implements ObjectRepository {
     if (!isValidObjectId(id)) return null;
     const doc = await this.model.findById(id).exec();
     return doc ? this.toDomain(doc) : null;
+  }
+
+  async update(object: CollectionObject): Promise<CollectionObject> {
+    const doc = await this.model
+      .findByIdAndUpdate(
+        object.id,
+        {
+          title: object.title,
+          description: object.description,
+          imageUrl: object.imageUrl,
+          imageKey: object.imageKey,
+        },
+        { new: true },
+      )
+      .exec();
+    if (!doc) throw new ObjectNotFoundError(object.id);
+    return this.toDomain(doc);
   }
 
   async delete(object: CollectionObject): Promise<void> {

@@ -42,6 +42,10 @@ export function useObjects(initial: CollectionObject[]) {
           ? current
           : [object, ...current],
       );
+    const onUpdated = (object: CollectionObject) =>
+      setObjects((current) =>
+        current.map((o) => (o.id === object.id ? object : o)),
+      );
     const onDeleted = ({ id }: { id: string }) =>
       setObjects((current) => current.filter((o) => o.id !== id));
     const reconcile = () => {
@@ -53,12 +57,14 @@ export function useObjects(initial: CollectionObject[]) {
     };
 
     socket.on('object:created', onCreated);
+    socket.on('object:updated', onUpdated);
     socket.on('object:deleted', onDeleted);
     socket.on('connect', reconcile);
     if (socket.connected) reconcile();
 
     return () => {
       socket.off('object:created', onCreated);
+      socket.off('object:updated', onUpdated);
       socket.off('object:deleted', onDeleted);
       socket.off('connect', reconcile);
     };

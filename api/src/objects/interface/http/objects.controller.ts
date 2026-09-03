@@ -5,6 +5,7 @@ import {
   Get,
   HttpCode,
   Param,
+  Patch,
   Post,
   Query,
   UploadedFile,
@@ -26,7 +27,9 @@ import { CreateObjectUseCase } from '../../application/create-object.use-case';
 import { DeleteObjectUseCase } from '../../application/delete-object.use-case';
 import { GetObjectUseCase } from '../../application/get-object.use-case';
 import { ListObjectsUseCase } from '../../application/list-objects.use-case';
+import { UpdateObjectUseCase } from '../../application/update-object.use-case';
 import { CreateObjectRequest } from './dto/create-object.request';
+import { UpdateObjectRequest } from './dto/update-object.request';
 import { ObjectResponseDto } from './dto/object.response.dto';
 import { ObjectView, toObjectView } from '../../application/object.view';
 
@@ -38,6 +41,7 @@ export class ObjectsController {
     private readonly createObject: CreateObjectUseCase,
     private readonly listObjects: ListObjectsUseCase,
     private readonly getObject: GetObjectUseCase,
+    private readonly updateObject: UpdateObjectUseCase,
     private readonly deleteObject: DeleteObjectUseCase,
   ) {}
 
@@ -78,6 +82,32 @@ export class ObjectsController {
   @ApiNotFoundResponse({ description: 'No object with this id.' })
   async findOne(@Param('id') id: string): Promise<ObjectView> {
     return toObjectView(await this.getObject.execute(id));
+  }
+
+  @Patch(':id')
+  @UseInterceptors(FileInterceptor('image'))
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({ summary: 'Update an object (optionally replaces its S3 image)' })
+  @ApiParam({ name: 'id', example: '65f1c0a4d2b8a1e4c9a7b123' })
+  @ApiOkResponse({ type: ObjectResponseDto })
+  @ApiNotFoundResponse({ description: 'No object with this id.' })
+  async update(
+    @Param('id') id: string,
+    @Body() body: UpdateObjectRequest,
+    @UploadedFile() image?: Express.Multer.File,
+  ): Promise<ObjectView> {
+    const object = await this.updateObject.execute({
+      id,
+      title: body.title,
+      description: body.description,
+      image: image && {
+        buffer: image.buffer,
+        mimeType: image.mimetype,
+        originalName: image.originalname,
+        size: image.size,
+      },
+    });
+    return toObjectView(object);
   }
 
   @Delete(':id')

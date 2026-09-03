@@ -24,6 +24,7 @@ import {
 } from '@/components/ui/card';
 import type { CollectionObject } from '@/lib/types';
 import { useI18n } from '@/i18n/provider';
+import { ObjectEditDialog } from './object-edit-dialog';
 
 interface ObjectCardProps {
   object: CollectionObject;
@@ -65,10 +66,12 @@ export function ObjectCard({ object, onDelete }: ObjectCardProps) {
           {object.description}
         </p>
       </CardContent>
-      <CardFooter className="justify-between">
+      <CardFooter className="justify-between gap-2">
         <span className="text-xs text-muted-foreground">
           {new Date(object.createdAt).toLocaleString(locale)}
         </span>
+        <div className="flex gap-2">
+        <ObjectEditDialog object={object} />
         <AlertDialog>
           <AlertDialogTrigger asChild>
             <Button variant="destructive" size="sm" disabled={deleting}>
@@ -98,6 +101,7 @@ export function ObjectCard({ object, onDelete }: ObjectCardProps) {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+        </div>
       </CardFooter>
     </Card>
   );

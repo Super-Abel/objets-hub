@@ -6,3 +6,14 @@ export interface CreateObjectCommand {
   description: string;
   image?: ImageToUpload;
 }
+
+/**
+ * Input of the "update object" use case. `title` / `description` are applied
+ * only when present; `image`, when present, replaces the stored one.
+ */
+export interface UpdateObjectCommand {
+  id: string;
+  title?: string;
+  description?: string;
+  image?: ImageToUpload;
+}
