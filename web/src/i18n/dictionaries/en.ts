@@ -21,9 +21,11 @@ export const en: Dictionary = {
   board: {
     count: (n: number) => `${n} object${n === 1 ? '' : 's'}`,
     empty: 'No objects yet — create the first one.',
+    live: 'live',
   },
   form: {
     heading: 'New object',
+    subheading: 'Add an item to the collection.',
     title: 'Title',
     description: 'Description',
     image: 'Image',

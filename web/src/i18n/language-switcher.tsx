@@ -20,7 +20,7 @@ export function LanguageSwitcher() {
 
   return (
     <div
-      className="flex items-center gap-1 text-xs font-medium"
+      className="flex items-center rounded-lg border bg-background/60 p-0.5 text-xs font-semibold"
       role="group"
       aria-label={t.language.label}
     >
@@ -32,9 +32,9 @@ export function LanguageSwitcher() {
           disabled={pending}
           aria-pressed={option === locale}
           className={cn(
-            'rounded px-1.5 py-0.5 uppercase transition-colors disabled:opacity-50',
+            'rounded-md px-2 py-1 uppercase tracking-wide transition-colors disabled:opacity-50',
             option === locale
-              ? 'bg-foreground text-background'
+              ? 'bg-brand text-brand-foreground shadow-sm'
               : 'text-muted-foreground hover:text-foreground',
           )}
         >

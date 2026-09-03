@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { Pencil } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import {
@@ -130,8 +131,13 @@ export function ObjectEditDialog({ object, trigger }: ObjectEditDialogProps) {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         {trigger ?? (
-          <Button variant="outline" size="sm">
-            {t.edit.trigger}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-muted-foreground hover:text-brand"
+          >
+            <Pencil className="h-3.5 w-3.5" />
+            <span className="sr-only sm:not-sr-only">{t.edit.trigger}</span>
           </Button>
         )}
       </DialogTrigger>

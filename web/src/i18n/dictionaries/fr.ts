@@ -24,9 +24,11 @@ export const fr = {
   board: {
     count: (n: number) => `${n} objet${n === 1 ? '' : 's'}`,
     empty: 'Aucun objet pour l’instant — créez le premier.',
+    live: 'en direct',
   },
   form: {
     heading: 'Nouvel objet',
+    subheading: 'Ajoutez un objet à la collection.',
     title: 'Titre',
     description: 'Description',
     image: 'Image',

@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
+import { Check, ImagePlus, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import {
@@ -126,8 +127,14 @@ export function ObjectForm() {
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>{t.form.heading}</CardTitle>
+      <CardHeader className="flex-row items-center gap-3 space-y-0">
+        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-brand-muted text-brand">
+          <Plus className="h-5 w-5" />
+        </span>
+        <div className="space-y-0.5">
+          <CardTitle>{t.form.heading}</CardTitle>
+          <p className="text-xs text-muted-foreground">{t.form.subheading}</p>
+        </div>
       </CardHeader>
       <CardContent>
         <form onSubmit={onSubmit} className="space-y-4">
@@ -167,8 +174,11 @@ export function ObjectForm() {
           </div>
 
           {pending && (
-            <div className="space-y-2 rounded-md border border-dashed p-3">
-              <p className="text-sm font-medium">{t.form.imagePreviewHeading}</p>
+            <div className="animate-fade-in-up space-y-2.5 rounded-lg border border-brand/30 bg-brand-muted/40 p-3">
+              <div className="flex items-center gap-2 text-sm font-medium">
+                <ImagePlus className="h-4 w-4 text-brand" />
+                {t.form.imagePreviewHeading}
+              </div>
               <p className="text-xs text-muted-foreground">
                 {t.form.imagePreviewHint}
               </p>
@@ -183,6 +193,7 @@ export function ObjectForm() {
               </p>
               <div className="flex flex-wrap gap-2">
                 <Button type="button" size="sm" onClick={confirmImage}>
+                  <Check className="h-3.5 w-3.5" />
                   {t.form.confirmImage}
                 </Button>
                 <Button
@@ -198,8 +209,9 @@ export function ObjectForm() {
           )}
 
           {image && !pending && preview && (
-            <div className="space-y-2">
-              <p className="text-xs font-medium text-primary">
+            <div className="animate-fade-in-up space-y-2">
+              <p className="flex items-center gap-1.5 text-xs font-medium text-brand">
+                <Check className="h-3.5 w-3.5" />
                 {t.form.imageConfirmed}
               </p>
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -221,6 +233,7 @@ export function ObjectForm() {
 
           <Button
             type="submit"
+            size="lg"
             disabled={submitting || !image || !!pending}
             className="w-full"
           >

@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { ArrowLeft, CalendarDays, PackageX } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useI18n } from '@/i18n/provider';
 import { getSocket } from '@/lib/socket';
@@ -37,40 +38,52 @@ export function ObjectDetail({ initial }: { initial: CollectionObject }) {
 
   if (!object) {
     return (
-      <div className="mx-auto max-w-2xl space-y-4">
-        <h1 className="text-2xl font-semibold">{t.notFound.title}</h1>
+      <div className="mx-auto flex max-w-2xl flex-col items-center gap-3 rounded-xl border border-dashed py-16 text-center">
+        <div className="grid h-12 w-12 place-items-center rounded-full bg-secondary text-muted-foreground">
+          <PackageX className="h-6 w-6" />
+        </div>
+        <h1 className="text-xl font-semibold">{t.notFound.title}</h1>
         <p className="text-sm text-muted-foreground">{t.notFound.description}</p>
-        <Button asChild variant="ghost" size="sm">
-          <Link href="/">{t.notFound.back}</Link>
+        <Button asChild variant="outline" size="sm" className="mt-1">
+          <Link href="/">
+            <ArrowLeft className="h-4 w-4" />
+            {t.notFound.back}
+          </Link>
         </Button>
       </div>
     );
   }
 
   return (
-    <article className="mx-auto max-w-2xl space-y-6">
+    <article className="mx-auto max-w-3xl animate-fade-in-up space-y-6">
       <div className="flex items-center justify-between">
-        <Button asChild variant="ghost" size="sm">
-          <Link href="/">{t.detail.back}</Link>
+        <Button asChild variant="ghost" size="sm" className="-ml-2">
+          <Link href="/">
+            <ArrowLeft className="h-4 w-4" />
+            {t.detail.back}
+          </Link>
         </Button>
         <ObjectEditDialog object={object} />
       </div>
 
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={object.imageUrl}
-        alt={object.title}
-        className="w-full rounded-lg border object-cover"
-      />
-
-      <div className="space-y-2">
-        <h1 className="text-2xl font-semibold">{object.title}</h1>
-        <p className="text-xs text-muted-foreground">
-          {t.detail.created(new Date(object.createdAt).toLocaleString(locale))}
-        </p>
+      <div className="overflow-hidden rounded-xl border bg-secondary shadow-card">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={object.imageUrl}
+          alt={object.title}
+          className="max-h-[65vh] w-full object-contain"
+        />
       </div>
 
-      <p className="whitespace-pre-wrap text-sm leading-relaxed">
+      <div className="space-y-3">
+        <h1 className="text-3xl font-semibold tracking-tight">{object.title}</h1>
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary px-2.5 py-1 text-xs text-muted-foreground">
+          <CalendarDays className="h-3.5 w-3.5" />
+          {t.detail.created(new Date(object.createdAt).toLocaleString(locale))}
+        </span>
+      </div>
+
+      <p className="whitespace-pre-wrap text-[0.95rem] leading-relaxed text-foreground/90">
         {object.description}
       </p>
     </article>
