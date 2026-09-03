@@ -12,6 +12,12 @@ export const en: Dictionary = {
   language: {
     label: 'Language',
   },
+  theme: {
+    label: 'Theme',
+    light: 'Light',
+    dark: 'Dark',
+    system: 'System',
+  },
   board: {
     count: (n: number) => `${n} object${n === 1 ? '' : 's'}`,
     empty: 'No objects yet — create the first one.',
@@ -38,6 +44,11 @@ export const en: Dictionary = {
   card: {
     delete: 'Delete',
     deleting: 'Deleting…',
+    deleteConfirmTitle: 'Delete this object?',
+    deleteConfirmDescription: (title: string) =>
+      `“${title}” and its image will be permanently removed. This cannot be undone.`,
+    deleteConfirmCancel: 'Cancel',
+    deleteConfirmAction: 'Delete',
   },
   detail: {
     back: '← Back',

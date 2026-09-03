@@ -5,6 +5,17 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import {
   Card,
   CardContent,
   CardFooter,
@@ -58,14 +69,35 @@ export function ObjectCard({ object, onDelete }: ObjectCardProps) {
         <span className="text-xs text-muted-foreground">
           {new Date(object.createdAt).toLocaleString(locale)}
         </span>
-        <Button
-          variant="destructive"
-          size="sm"
-          onClick={handleDelete}
-          disabled={deleting}
-        >
-          {deleting ? t.card.deleting : t.card.delete}
-        </Button>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button variant="destructive" size="sm" disabled={deleting}>
+              {deleting ? t.card.deleting : t.card.delete}
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>{t.card.deleteConfirmTitle}</AlertDialogTitle>
+              <AlertDialogDescription>
+                {t.card.deleteConfirmDescription(object.title)}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={deleting}>
+                {t.card.deleteConfirmCancel}
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={(event) => {
+                  event.preventDefault(); // keep the dialog logic ours, not auto-close race
+                  void handleDelete();
+                }}
+                disabled={deleting}
+              >
+                {deleting ? t.card.deleting : t.card.deleteConfirmAction}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </CardFooter>
     </Card>
   );

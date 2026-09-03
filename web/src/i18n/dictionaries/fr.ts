@@ -15,6 +15,12 @@ export const fr = {
   language: {
     label: 'Langue',
   },
+  theme: {
+    label: 'Thème',
+    light: 'Clair',
+    dark: 'Sombre',
+    system: 'Système',
+  },
   board: {
     count: (n: number) => `${n} objet${n === 1 ? '' : 's'}`,
     empty: 'Aucun objet pour l’instant — créez le premier.',
@@ -41,6 +47,11 @@ export const fr = {
   card: {
     delete: 'Supprimer',
     deleting: 'Suppression…',
+    deleteConfirmTitle: 'Supprimer cet objet ?',
+    deleteConfirmDescription: (title: string) =>
+      `« ${title} » et son image seront définitivement supprimés. Cette action est irréversible.`,
+    deleteConfirmCancel: 'Annuler',
+    deleteConfirmAction: 'Supprimer',
   },
   detail: {
     back: '← Retour',
