@@ -23,16 +23,21 @@ The mobile app is intentionally left out.
 - **Typed config** — `src/config/storage.config.ts` (`registerAs`) reads and
   validates every `S3_*` env var once; adapters inject `ConfigType<…>`, never
   `process.env`.
-- **Image policy** — `domain/image-policy.ts` holds the MIME allowlist and size
-  gate as a pure, framework-free rule (`assertAcceptableImage`).
+- **Image policy** — `domain/image-policy.ts` holds, as pure framework-free
+  rules: the MIME allowlist + size gate (`assertAcceptableImage`) and a
+  magic-byte check (`assertRealImage`) that rejects a payload whose bytes aren't
+  a real image, even with a spoofed `Content-Type`.
 - **Typed error codes** — `domain/errors.ts` exposes an `ErrorCode` enum; every
   `DomainError` carries a `code`, mapped to an HTTP status by
   `DomainExceptionFilter` (`404 / 413 / 415 / 400`).
+- **Env validation** — `src/config/env.validation.ts` checks every required var
+  at boot (class-validator); a missing/blank value fails fast with a clear message.
 - **Upload edge** — Multer is configured once in `objects.module.ts`
   (memory storage, size ceiling, MIME allowlist); the controller only declares
   `FileInterceptor('image')`.
 - **Storage keys** — `infrastructure/storage/generate-storage-key.ts` builds
-  `objects/<uuid>.<ext>`; the original filename only contributes its extension.
+  `<uuid>.<ext>` (prefixed by `S3_KEY_PREFIX`, empty by default since the bucket
+  is already `objects`); the original filename only contributes its extension.
 - **Async queue** — `src/infra/queue/` (BullMQ + Redis) plus the
   `ObjectJobQueue` port. `DELETE /objects/:id` removes the row and broadcasts
   immediately; the S3 image deletion is a retryable job. Feature-flagged by
@@ -40,7 +45,11 @@ The mobile app is intentionally left out.
   needed), exactly like nexma's `FILE_QUEUE_ENABLED`. To enable: set
   `OBJECTS_QUEUE_ENABLED=true` and point `REDIS_URL` at any Redis (local Docker,
   Upstash, Render Key Value…).
-- **Tests** — co-located `*.spec.ts` (`pnpm test`), excluded from `nest build`.
+- **Tests** — co-located `*.spec.ts` (`pnpm test`) + HTTP boundary tests
+  (`pnpm test:integration`), excluded from `nest build`. CI runs both plus the
+  web build on every push (`.github/workflows/ci.yml`).
+- **Seed** — `pnpm seed [count]` (API must be running) inserts a few sample
+  objects so a fresh checkout has content.
 
 ## Prerequisites
 
@@ -74,13 +83,15 @@ pnpm start:dev            # http://localhost:4000
 | Method | Path           | Body                                          | Result |
 | ------ | -------------- | --------------------------------------------- | ------ |
 | POST   | `/objects`     | multipart: `title`, `description`, `image` (file) | 201 + object |
-| GET    | `/objects`     | —                                             | object[] (newest first) |
+| GET    | `/objects`     | `?limit` (1–200, default 100), `?skip` (≥0)   | object[] (newest first) |
 | GET    | `/objects/:id` | —                                             | object |
 | DELETE | `/objects/:id` | —                                             | 204, also deletes the S3 file |
+| GET    | `/health`      | —                                             | `{ status, checks: { mongo, storage } }` — 200 or 503 |
 
 `POST` uploads the image to S3 first; if the DB write then fails the upload is
 rolled back so no orphan files are left. `DELETE` removes the DB row and the S3
-object (S3 failure is logged, not fatal).
+object (S3 failure is logged, not fatal). All routes are rate-limited to
+60 req/min/IP (`/health` is exempt).
 
 ## 3. Web
 

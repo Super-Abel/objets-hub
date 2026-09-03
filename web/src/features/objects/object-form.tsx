@@ -181,7 +181,7 @@ export function ObjectForm() {
               <p className="truncate text-xs text-muted-foreground">
                 {pending.file.name} · {formatSize(pending.file.size)}
               </p>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <Button type="button" size="sm" onClick={confirmImage}>
                   {t.form.confirmImage}
                 </Button>
