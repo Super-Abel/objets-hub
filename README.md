@@ -53,7 +53,7 @@ The mobile app is intentionally left out.
 
 ## Prerequisites
 
-- Node 20+
+- Node 22+ (`.node-version` pins 22 — Node 20 is EOL on CI/Render)
 - pnpm 9+ (`corepack enable` or `npm i -g pnpm`)
 - Docker (for MongoDB + MinIO) — or your own Mongo/S3 instances
 
