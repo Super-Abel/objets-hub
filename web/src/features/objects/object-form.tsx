@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { Check, ImagePlus, Plus } from 'lucide-react';
+import { ImagePlus, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import {
@@ -22,12 +22,6 @@ import {
   type ImageProblem,
 } from './image-policy';
 
-/** An image the user has picked but not yet confirmed, plus its object-URL preview. */
-interface PendingImage {
-  file: File;
-  url: string;
-}
-
 function formatSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
@@ -36,11 +30,8 @@ export function ObjectForm() {
   const t = useDictionary();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  // `image` is only set once the user has confirmed the preview; `pending` holds
-  // a freshly picked file waiting for that confirmation.
   const [image, setImage] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
-  const [pending, setPending] = useState<PendingImage | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
 
@@ -50,59 +41,32 @@ export function ObjectForm() {
       : t.image.unsupportedType;
   }
 
-  /** Stage a picked file for confirmation — it does not become `image` until confirmed. */
+  /** Validate a picked file; a valid one becomes the image used on submit. */
   function pickImage(file: File | null) {
-    setPending((old) => {
-      if (old) URL.revokeObjectURL(old.url);
-      if (!file) return null;
+    if (file) {
       const problem = checkImage(file);
       if (problem) {
         toast.error(imageProblemMessage(problem));
         if (fileInput.current) fileInput.current.value = '';
-        return null;
+        return;
       }
-      return { file, url: URL.createObjectURL(file) };
-    });
-  }
-
-  /** Accept the pending image: promote it to the confirmed `image` used on submit. */
-  function confirmImage() {
-    if (!pending) return;
+    }
+    setImage(file);
     setPreview((old) => {
       if (old) URL.revokeObjectURL(old);
-      return pending.url; // ownership of the URL moves from `pending` to `preview`
+      return file ? URL.createObjectURL(file) : null;
     });
-    setImage(pending.file);
-    setPending(null);
-  }
-
-  /** Discard the pending image and reopen the file picker. */
-  function rejectImage() {
-    pickImage(null);
-    if (fileInput.current) {
-      fileInput.current.value = '';
-      fileInput.current.click();
-    }
   }
 
   function reset() {
     setTitle('');
     setDescription('');
-    setImage(null);
-    setPreview((old) => {
-      if (old) URL.revokeObjectURL(old);
-      return null;
-    });
     pickImage(null);
     if (fileInput.current) fileInput.current.value = '';
   }
 
   async function onSubmit(event: React.FormEvent) {
     event.preventDefault();
-    if (pending) {
-      toast.error(t.form.imageNotConfirmed);
-      return;
-    }
     if (!image) {
       toast.error(t.form.imageRequired);
       return;
@@ -173,7 +137,7 @@ export function ObjectForm() {
             </p>
           </div>
 
-          {pending && (
+          {image && preview && (
             <div className="animate-fade-in-up space-y-2.5 rounded-lg border border-brand/30 bg-brand-muted/40 p-3">
               <div className="flex items-center gap-2 text-sm font-medium">
                 <ImagePlus className="h-4 w-4 text-brand" />
@@ -184,49 +148,20 @@ export function ObjectForm() {
               </p>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={pending.url}
+                src={preview}
                 alt={t.form.imagePreviewAlt}
                 className="h-40 w-full rounded-md border bg-secondary object-contain"
               />
               <p className="truncate text-xs text-muted-foreground">
-                {pending.file.name} · {formatSize(pending.file.size)}
+                {image.name} · {formatSize(image.size)}
               </p>
-              <div className="flex flex-wrap gap-2">
-                <Button type="button" size="sm" onClick={confirmImage}>
-                  <Check className="h-3.5 w-3.5" />
-                  {t.form.confirmImage}
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  onClick={rejectImage}
-                >
-                  {t.form.rejectImage}
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {image && !pending && preview && (
-            <div className="animate-fade-in-up space-y-2">
-              <p className="flex items-center gap-1.5 text-xs font-medium text-brand">
-                <Check className="h-3.5 w-3.5" />
-                {t.form.imageConfirmed}
-              </p>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={preview}
-                alt={t.form.imagePreviewAlt}
-                className="h-40 w-full rounded-md border object-cover"
-              />
               <Button
                 type="button"
                 size="sm"
-                variant="ghost"
+                variant="outline"
                 onClick={() => fileInput.current?.click()}
               >
-                {t.form.changeImage}
+                {t.form.rejectImage}
               </Button>
             </div>
           )}
@@ -234,7 +169,7 @@ export function ObjectForm() {
           <Button
             type="submit"
             size="lg"
-            disabled={submitting || !image || !!pending}
+            disabled={submitting || !image}
             className="w-full"
           >
             {submitting ? t.form.submitting : t.form.submit}
