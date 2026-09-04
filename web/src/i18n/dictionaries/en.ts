@@ -22,6 +22,7 @@ export const en: Dictionary = {
     count: (n: number) => `${n} object${n === 1 ? '' : 's'}`,
     empty: 'No objects yet — create the first one.',
     live: 'live',
+    offline: 'offline',
   },
   form: {
     heading: 'New object',

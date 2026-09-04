@@ -25,6 +25,7 @@ export const fr = {
     count: (n: number) => `${n} objet${n === 1 ? '' : 's'}`,
     empty: 'Aucun objet pour l’instant — créez le premier.',
     live: 'en direct',
+    offline: 'hors ligne',
   },
   form: {
     heading: 'Nouvel objet',

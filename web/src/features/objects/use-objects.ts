@@ -15,6 +15,7 @@ const byNewestFirst = (a: CollectionObject, b: CollectionObject) =>
  */
 export function useObjects(initial: CollectionObject[]) {
   const [objects, setObjects] = useState(initial);
+  const [connected, setConnected] = useState(false);
 
   const removeObject = useCallback(async (id: string) => {
     let removed: CollectionObject | undefined;
@@ -55,20 +56,28 @@ export function useObjects(initial: CollectionObject[]) {
           /* keep the current list if the refetch fails */
         });
     };
+    const onConnect = () => {
+      setConnected(true);
+      reconcile();
+    };
+    const onDisconnect = () => setConnected(false);
 
     socket.on('object:created', onCreated);
     socket.on('object:updated', onUpdated);
     socket.on('object:deleted', onDeleted);
-    socket.on('connect', reconcile);
+    socket.on('connect', onConnect);
+    socket.on('disconnect', onDisconnect);
+    setConnected(socket.connected);
     if (socket.connected) reconcile();
 
     return () => {
       socket.off('object:created', onCreated);
       socket.off('object:updated', onUpdated);
       socket.off('object:deleted', onDeleted);
-      socket.off('connect', reconcile);
+      socket.off('connect', onConnect);
+      socket.off('disconnect', onDisconnect);
     };
   }, []);
 
-  return { objects, removeObject };
+  return { objects, removeObject, connected };
 }
