@@ -131,13 +131,9 @@ export function ObjectEditDialog({ object, trigger }: ObjectEditDialogProps) {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         {trigger ?? (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-muted-foreground hover:text-brand"
-          >
+          <Button variant="outline" size="sm">
             <Pencil className="h-3.5 w-3.5" />
-            <span className="sr-only sm:not-sr-only">{t.edit.trigger}</span>
+            {t.edit.trigger}
           </Button>
         )}
       </DialogTrigger>

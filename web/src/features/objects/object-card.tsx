@@ -57,6 +57,13 @@ export function ObjectCard({ object, onDelete }: ObjectCardProps) {
           loading="lazy"
           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
+        <time
+          dateTime={created.toISOString()}
+          title={created.toLocaleString(locale)}
+          className="absolute right-2 top-2 rounded-md bg-black/55 px-1.5 py-0.5 text-[11px] font-medium text-white shadow-sm backdrop-blur-sm"
+        >
+          {formatRelativeTime(created, locale)}
+        </time>
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/40 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
       </Link>
 
@@ -75,58 +82,39 @@ export function ObjectCard({ object, onDelete }: ObjectCardProps) {
           </p>
         </div>
 
-        <div className="flex items-center justify-between gap-2 border-t border-border/60 pt-3">
-          <time
-            dateTime={created.toISOString()}
-            title={created.toLocaleString(locale)}
-            className="text-xs text-muted-foreground"
-          >
-            {formatRelativeTime(created, locale)}
-          </time>
-
-          <div className="flex items-center gap-1.5">
-            <ObjectEditDialog object={object} />
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
+        <div className="flex items-center justify-end gap-2 border-t border-border/60 pt-3">
+          <ObjectEditDialog object={object} />
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive" size="sm" disabled={deleting}>
+                <Trash2 className="h-3.5 w-3.5" />
+                {deleting ? t.card.deleting : t.card.delete}
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>{t.card.deleteConfirmTitle}</AlertDialogTitle>
+                <AlertDialogDescription>
+                  {t.card.deleteConfirmDescription(object.title)}
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={deleting}>
+                  {t.card.deleteConfirmCancel}
+                </AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={(event) => {
+                    event.preventDefault(); // keep the dialog logic ours, not auto-close race
+                    void handleDelete();
+                  }}
                   disabled={deleting}
-                  className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                 >
-                  <Trash2 className="h-3.5 w-3.5" />
-                  <span className="sr-only sm:not-sr-only">
-                    {deleting ? t.card.deleting : t.card.delete}
-                  </span>
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>
-                    {t.card.deleteConfirmTitle}
-                  </AlertDialogTitle>
-                  <AlertDialogDescription>
-                    {t.card.deleteConfirmDescription(object.title)}
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel disabled={deleting}>
-                    {t.card.deleteConfirmCancel}
-                  </AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={(event) => {
-                      event.preventDefault(); // keep the dialog logic ours, not auto-close race
-                      void handleDelete();
-                    }}
-                    disabled={deleting}
-                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                  >
-                    {deleting ? t.card.deleting : t.card.deleteConfirmAction}
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </div>
+                  {deleting ? t.card.deleting : t.card.deleteConfirmAction}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </div>
     </Card>
