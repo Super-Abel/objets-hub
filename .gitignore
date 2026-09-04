@@ -20,3 +20,6 @@ coverage/
 *.log
 npm-debug.log*
 .DS_Store
+
+# agent tooling (local only)
+.agents/
