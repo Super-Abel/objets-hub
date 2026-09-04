@@ -15,13 +15,19 @@ export function ThemeToggle() {
   useEffect(() => setMounted(true), []);
 
   const isDark = resolvedTheme === 'dark';
-  const nextLabel = isDark ? t.theme.light : t.theme.dark;
+  // Before mount `resolvedTheme` is unknown on both server and client, so keep
+  // every theme-dependent attribute static until then.
+  const nextLabel = mounted
+    ? isDark
+      ? t.theme.light
+      : t.theme.dark
+    : undefined;
 
   return (
     <Button
       variant="ghost"
       size="icon"
-      aria-label={`${t.theme.label}: ${nextLabel}`}
+      aria-label={nextLabel ? `${t.theme.label}: ${nextLabel}` : t.theme.label}
       title={nextLabel}
       onClick={() => setTheme(isDark ? 'light' : 'dark')}
     >
@@ -30,6 +36,7 @@ export function ThemeToggle() {
       ) : (
         <Moon className="h-4 w-4" />
       )}
+      <span className="sr-only">{t.theme.label}</span>
     </Button>
   );
 }

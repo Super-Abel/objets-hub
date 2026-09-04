@@ -10,7 +10,7 @@ import { ServerOptions } from 'socket.io';
 export class CorsIoAdapter extends IoAdapter {
   constructor(
     app: INestApplicationContext,
-    private readonly origin: string,
+    private readonly origin: string | string[],
   ) {
     super(app);
   }

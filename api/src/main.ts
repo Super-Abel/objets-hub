@@ -8,18 +8,29 @@ import { AppModule } from './app.module';
 import { CorsIoAdapter } from './common/ws/cors-io.adapter';
 
 /**
- * Platform env vars (Render `fromService`) expose a bare hostname; browsers need
- * a full origin. Prefix `https://` when a scheme is missing, leave `*` untouched.
+ * `CORS_ORIGIN` is a comma-separated list of allowed origins (one entry is the
+ * common case). Platform env vars (Render `fromService`) expose a bare hostname,
+ * so prefix `https://` when a scheme is missing. `*` anywhere means "any origin".
  */
-function normalizeOrigin(value: string): string {
-  if (value === '*' || /^https?:\/\//i.test(value)) return value;
-  return `https://${value.replace(/\/+$/, '')}`;
+function parseCorsOrigin(value: string): string | string[] {
+  const origins = value
+    .split(',')
+    .map((entry) => entry.trim())
+    .filter(Boolean)
+    .map((entry) =>
+      entry === '*' || /^https?:\/\//i.test(entry)
+        ? entry
+        : `https://${entry.replace(/\/+$/, '')}`,
+    );
+
+  if (origins.length === 0 || origins.includes('*')) return '*';
+  return origins.length === 1 ? origins[0] : origins;
 }
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const config = app.get(ConfigService);
-  const corsOrigin = normalizeOrigin(config.get<string>('CORS_ORIGIN', '*'));
+  const corsOrigin = parseCorsOrigin(config.get<string>('CORS_ORIGIN', '*'));
 
   // `crossOriginResourcePolicy` off: images are served from a different origin (S3/MinIO).
   app.use(helmet({ crossOriginResourcePolicy: false }));
