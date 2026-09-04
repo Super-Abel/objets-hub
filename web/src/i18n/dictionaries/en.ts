@@ -73,7 +73,7 @@ export const en: Dictionary = {
     noChanges: 'No changes to save.',
   },
   detail: {
-    back: '← Back',
+    back: 'Back',
     created: (date: string) => `Created ${date}`,
   },
   notFound: {

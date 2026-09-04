@@ -76,7 +76,7 @@ export const fr = {
     noChanges: 'Aucune modification à enregistrer.',
   },
   detail: {
-    back: '← Retour',
+    back: 'Retour',
     created: (date: string) => `Créé le ${date}`,
   },
   notFound: {
