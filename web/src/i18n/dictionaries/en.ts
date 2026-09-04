@@ -23,6 +23,8 @@ export const en: Dictionary = {
     empty: 'No objects yet — create the first one.',
     live: 'live',
     offline: 'offline',
+    loadMore: 'Load more',
+    loadingMore: 'Loading…',
   },
   form: {
     heading: 'New object',

@@ -13,9 +13,18 @@ async function parse<T>(res: Response): Promise<T> {
   return res.json() as Promise<T>;
 }
 
-/** GET /objects — used for SSR of the list page. */
-export async function listObjects(): Promise<CollectionObject[]> {
-  return parse(await fetch(BASE, { cache: 'no-store' }));
+/** GET /objects?limit=&skip= — a bounded, newest-first window over the collection. */
+export async function listObjects(params?: {
+  limit?: number;
+  skip?: number;
+}): Promise<CollectionObject[]> {
+  const qs = new URLSearchParams();
+  if (params?.limit != null) qs.set('limit', String(params.limit));
+  if (params?.skip != null) qs.set('skip', String(params.skip));
+  const query = qs.toString();
+  return parse(
+    await fetch(query ? `${BASE}?${query}` : BASE, { cache: 'no-store' }),
+  );
 }
 
 /** GET /objects/:id — returns null on 404 so pages can call `notFound()`. */

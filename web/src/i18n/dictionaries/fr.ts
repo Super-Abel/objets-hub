@@ -26,6 +26,8 @@ export const fr = {
     empty: 'Aucun objet pour l’instant — créez le premier.',
     live: 'en direct',
     offline: 'hors ligne',
+    loadMore: 'Charger plus',
+    loadingMore: 'Chargement…',
   },
   form: {
     heading: 'Nouvel objet',

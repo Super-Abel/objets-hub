@@ -1,21 +1,34 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { getSocket } from '@/lib/socket';
 import type { CollectionObject } from '@/lib/types';
 import { deleteObject, listObjects } from './api';
+import { PAGE_SIZE } from './constants';
 
 const byNewestFirst = (a: CollectionObject, b: CollectionObject) =>
   new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
 
+const mergeUnique = (
+  current: CollectionObject[],
+  incoming: CollectionObject[],
+) => {
+  const seen = new Set(current.map((o) => o.id));
+  return [...current, ...incoming.filter((o) => !seen.has(o.id))];
+};
+
 /**
- * Holds the live list of objects: seeded from the server-rendered snapshot, kept
- * in sync via Socket.IO (`object:created` / `object:deleted`), and re-fetched on
- * every (re)connect so nothing created during a disconnect is missed.
+ * Holds the live list of objects: seeded from the server-rendered first page,
+ * paginated with `loadMore` (GET /objects?limit=&skip=), and kept in sync via
+ * Socket.IO. `serverCount` tracks how many list-fetched items are on screen so
+ * `skip` stays right even as live `object:created` events prepend new cards.
  */
 export function useObjects(initial: CollectionObject[]) {
   const [objects, setObjects] = useState(initial);
   const [connected, setConnected] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(initial.length === PAGE_SIZE);
+  const serverCount = useRef(initial.length);
 
   const removeObject = useCallback(async (id: string) => {
     let removed: CollectionObject | undefined;
@@ -23,14 +36,33 @@ export function useObjects(initial: CollectionObject[]) {
       removed = current.find((o) => o.id === id);
       return current.filter((o) => o.id !== id);
     });
+    if (removed) serverCount.current = Math.max(0, serverCount.current - 1);
     try {
       await deleteObject(id);
     } catch (error) {
       if (removed) {
         // Roll the optimistic removal back.
+        serverCount.current += 1;
         setObjects((current) => [removed!, ...current].sort(byNewestFirst));
       }
       throw error;
+    }
+  }, []);
+
+  const loadMore = useCallback(async () => {
+    setLoadingMore(true);
+    try {
+      const page = await listObjects({
+        limit: PAGE_SIZE,
+        skip: serverCount.current,
+      });
+      serverCount.current += page.length;
+      setObjects((current) => mergeUnique(current, page));
+      setHasMore(page.length === PAGE_SIZE);
+    } catch {
+      /* leave the button so the user can retry */
+    } finally {
+      setLoadingMore(false);
     }
   }, []);
 
@@ -48,10 +80,22 @@ export function useObjects(initial: CollectionObject[]) {
         current.map((o) => (o.id === object.id ? object : o)),
       );
     const onDeleted = ({ id }: { id: string }) =>
-      setObjects((current) => current.filter((o) => o.id !== id));
+      setObjects((current) => {
+        if (!current.some((o) => o.id === id)) return current;
+        serverCount.current = Math.max(0, serverCount.current - 1);
+        return current.filter((o) => o.id !== id);
+      });
+
+    // On (re)connect, re-pull the window we currently show so anything missed
+    // while offline is reconciled without losing the user's paging position.
     const reconcile = () => {
-      listObjects()
-        .then(setObjects)
+      const limit = Math.min(Math.max(serverCount.current, PAGE_SIZE), 200);
+      listObjects({ limit })
+        .then((fresh) => {
+          serverCount.current = fresh.length;
+          setObjects(fresh);
+          setHasMore(fresh.length === limit);
+        })
         .catch(() => {
           /* keep the current list if the refetch fails */
         });
@@ -79,5 +123,5 @@ export function useObjects(initial: CollectionObject[]) {
     };
   }, []);
 
-  return { objects, removeObject, connected };
+  return { objects, removeObject, connected, loadMore, loadingMore, hasMore };
 }

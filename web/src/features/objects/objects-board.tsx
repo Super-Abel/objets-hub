@@ -1,6 +1,7 @@
 'use client';
 
-import { PackageOpen } from 'lucide-react';
+import { Loader2, PackageOpen } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { CollectionObject } from '@/lib/types';
 import { useDictionary } from '@/i18n/provider';
@@ -11,7 +12,8 @@ import { useObjects } from './use-objects';
 /** Client island: creation form on the left, realtime grid on the right. */
 export function ObjectsBoard({ initial }: { initial: CollectionObject[] }) {
   const t = useDictionary();
-  const { objects, removeObject, connected } = useObjects(initial);
+  const { objects, removeObject, connected, loadMore, loadingMore, hasMore } =
+    useObjects(initial);
 
   return (
     <div className="grid gap-8 lg:grid-cols-[340px_1fr]">
@@ -58,17 +60,34 @@ export function ObjectsBoard({ initial }: { initial: CollectionObject[] }) {
             </p>
           </div>
         ) : (
-          <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-            {objects.map((object, i) => (
-              <div
-                key={object.id}
-                className="animate-fade-in-up"
-                style={{ animationDelay: `${Math.min(i, 8) * 40}ms` }}
-              >
-                <ObjectCard object={object} onDelete={removeObject} />
+          <>
+            <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+              {objects.map((object, i) => (
+                <div
+                  key={object.id}
+                  className="animate-fade-in-up"
+                  style={{ animationDelay: `${Math.min(i, 8) * 40}ms` }}
+                >
+                  <ObjectCard object={object} onDelete={removeObject} />
+                </div>
+              ))}
+            </div>
+
+            {hasMore && (
+              <div className="mt-8 flex justify-center">
+                <Button
+                  variant="outline"
+                  onClick={loadMore}
+                  disabled={loadingMore}
+                >
+                  {loadingMore && (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  )}
+                  {loadingMore ? t.board.loadingMore : t.board.loadMore}
+                </Button>
               </div>
-            ))}
-          </div>
+            )}
+          </>
         )}
       </section>
     </div>
